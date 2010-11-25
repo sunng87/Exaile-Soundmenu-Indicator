@@ -28,6 +28,9 @@
 import dbus
 import dbus.service
 
+from xl import settings
+from xl.covers import MANAGER as cover_manager
+
 ORG_MPRIS_MEDIAPLAYER2="org.mpris.MediaPlayer2"
 ORG_MPRIS_MEDIAPLAYER2_PLAYER="org.mpris.MediaPlayer2.Player"
 ORG_MPRIS_MEDIAPLAYER2_TRACKLIST="org.mpris.MediaPlayer2.TrackList"
@@ -67,27 +70,27 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Next(self):
-        pass
+        self.exaile.queue.next()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Previous(self):
-        pass
+        self.exaile.queue.previous()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Pause(self):
-        pass
+        self.exaile.player.pause()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def PlayPause(self):
-        pass
+        self.exaile.player.toggle_pause()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Stop(self):
-        pass
+        self.exaile.player.stop()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Play(self):
-        pass
+        self.exaile.queue.play()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, in_signature='x')
     def Seek(self, offset):
@@ -135,23 +138,23 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
     def CanGoNext(self):
-        pass
+        return True
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
     def CanGoPrevious(self):
-        pass
+        return True
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
     def CanPlay(self):
-        pass
+        return True
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
     def CanPause(self):
-        pass
+        return True
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
     def CanSeek(self):
-        pass
+        return False
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
     def CanControl(self):
@@ -159,7 +162,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
     def Shuffle(self):
-        pass
+        return settings.get_option('playback/shuffle', False)
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, in_signature='ao', out_signature='aa{sv}')
     def GetTracksMetadata(self, track_ids):
@@ -184,4 +187,18 @@ class Mpris2Adapter(dbus.service.Object):
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, signature='b')
     def CanEditTracks(self):
         return False
+
+def get_metadata(track):
+    ## mpris2.0 meta map, defined at http://xmms2.org/wiki/MPRIS_Metadata
+    meta = {}
+    meta['xesam:title'] = unicode(track.get_tag_raw('title'))
+    meta['xesam:album'] = unicode(track.get_tag_raw('album'))
+    meta['xesam:artist'] = unicode(track.get_tag_raw('artist'))
+
+    meta['mpris:length'] = int(track.get_tag_raw('__length'))*1000
+    meta['mpris:artUrl'] = unicode(cover_manager.get_cover(track))
+    meta['mpris:trackid'] = unicode(track.uri)
+
+    return meta
+
 
