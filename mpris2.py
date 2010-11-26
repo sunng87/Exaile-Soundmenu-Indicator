@@ -37,7 +37,7 @@ ORG_MPRIS_MEDIAPLAYER2_TRACKLIST="org.mpris.MediaPlayer2.TrackList"
 class Mpris2Adapter(dbus.service.Object):
     """ interface defined by org.mpris.MediaPlayer2"""
     def __init__(self, exaile, bus):
-        super(Mpris2Root, self).__init__(bus)
+        super(Mpris2Adapter, self).__init__(bus)
         self.exaile = exaile
         
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
@@ -104,63 +104,63 @@ class Mpris2Adapter(dbus.service.Object):
     def OpenUri(self, uri):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='s')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='s')
     def PlaybackStatus(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='s')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='s')
     def LoopStatus(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='d')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def Rate(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='a{sv}')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='a{sv}')
     def Metadata(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='d')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def Volume(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='x')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='x')
     def Position(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='d')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def MinimumRate(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='d')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def MaximumRate(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanGoNext(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanGoPrevious(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanPlay(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanPause(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanSeek(self):
         return False
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanControl(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def Shuffle(self):
         return settings.get_option('playback/shuffle', False)
 
@@ -180,11 +180,11 @@ class Mpris2Adapter(dbus.service.Object):
     def Goto(self, trackId):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, signature='ao')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, out_signature='ao')
     def Tracks(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, signature='b')
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, out_signature='b')
     def CanEditTracks(self):
         return False
 
@@ -196,7 +196,9 @@ def get_metadata(track):
     meta['xesam:artist'] = unicode(track.get_tag_raw('artist'))
 
     meta['mpris:length'] = int(track.get_tag_raw('__length'))*1000
-    meta['mpris:artUrl'] = unicode(cover_manager.get_cover(track))
+    cover_urls = cover_manager.find_covers(track)
+    if len(cover_urls) > 0:
+        meta['mpris:artUrl'] = unicode(cover_urls[0])
     meta['mpris:trackid'] = unicode(track.uri)
 
     return meta

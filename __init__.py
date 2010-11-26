@@ -25,25 +25,43 @@
 # from your version.
 #
 
-import mpris2
+import indicate
+import dbus
 
+from mpris2 import Mpris2Adapter
+
+INDICATOR_PLUGIN = None
 def enable(exaile):
-    """enable this plugin"""
-    pass
+    mpris2_mgr = Mpris2Manager(exaile)
+    mpris2_mgr.acquire()
+    init_indicate()
 
 def disable(exaile):
-    """docstring for disable"""
-    pass
+    mpris2_mgr.release()
+
+def init_indicate():
+    server = indicate.indicate_server_ref_default()
+    server.set_type('music.exaile')
+    server.set_desktop_file('/usr/share/applications/exaile.desktop')
+    server.show()
 
 class Mpris2Manager(object):
+    NAME = 'org.mpris.MediaPlayer2.exaile'
     def __init__(self, exaile):
         self.exaile = exaile
+        self.bus = None
         
-
     def acquire(self):
-        pass
+        if self.bus:
+            self.bus.get_bus().request_name(self.NAME)
+        else:
+            self.bus = dbus.service.BusName(self.NAME, bus=dbus.SessionBus())
+        self.adapter = Mpris2Adapter(self.exaile, self.bus)
 
     def release(self):
-        pass
-
+        if self.adapter is not None:
+            self.adapter.remove_from_connection()
+        if self.bus is not None:
+            self.bus.get_bus().release_name(self.bus.get_name())
+        
 
