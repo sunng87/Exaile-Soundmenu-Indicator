@@ -30,14 +30,16 @@ import dbus
 
 from mpris2 import Mpris2Adapter
 
-INDICATOR_PLUGIN = None
+MPRIS2 = None
 def enable(exaile):
-    mpris2_mgr = Mpris2Manager(exaile)
-    mpris2_mgr.acquire()
+    global MPRIS2
+    MPRIS2 = Mpris2Manager(exaile)
+    MPRIS2.acquire()
     init_indicate()
 
 def disable(exaile):
-    mpris2_mgr.release()
+    global MPRIS2
+    MPRIS2.release()
 
 def init_indicate():
     server = indicate.indicate_server_ref_default()
@@ -45,17 +47,17 @@ def init_indicate():
     server.set_desktop_file('/usr/share/applications/exaile.desktop')
     server.show()
 
+DBUS_OBJECT_NAME = 'org.mpris.MediaPlayer2.exaile'
 class Mpris2Manager(object):
-    NAME = 'org.mpris.MediaPlayer2.exaile'
     def __init__(self, exaile):
         self.exaile = exaile
         self.bus = None
         
     def acquire(self):
         if self.bus:
-            self.bus.get_bus().request_name(self.NAME)
+            self.bus.get_bus().request_name(DBUS_OBJECT_NAME)
         else:
-            self.bus = dbus.service.BusName(self.NAME, bus=dbus.SessionBus())
+            self.bus = dbus.service.BusName(DBUS_OBJECT_NAME, bus=dbus.SessionBus())
         self.adapter = Mpris2Adapter(self.exaile, self.bus)
 
     def release(self):

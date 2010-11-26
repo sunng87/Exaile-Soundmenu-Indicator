@@ -37,7 +37,8 @@ ORG_MPRIS_MEDIAPLAYER2_TRACKLIST="org.mpris.MediaPlayer2.TrackList"
 class Mpris2Adapter(dbus.service.Object):
     """ interface defined by org.mpris.MediaPlayer2"""
     def __init__(self, exaile, bus):
-        super(Mpris2Adapter, self).__init__(bus)
+#        super(Mpris2Adapter, self).__init__(self, bus, unicode('/org/mpris/MediaPlayer2'))
+        dbus.service.Object.__init__(self, bus, '/org/mpris/MediaPlayer2')
         self.exaile = exaile
         
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
@@ -74,7 +75,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Previous(self):
-        self.exaile.queue.previous()
+        self.exaile.queue.prev()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Pause(self):
@@ -82,7 +83,10 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def PlayPause(self):
-        self.exaile.player.toggle_pause()
+        if not self.exaile.player.is_playing():
+            self.exaile.queue.play()
+        else:
+            self.exaile.player.toggle_pause()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Stop(self):
