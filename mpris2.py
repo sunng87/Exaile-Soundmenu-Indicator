@@ -26,11 +26,14 @@
 #
 
 import dbus
-import dbus.service
 
-from xl import settings
+import logging
+import tempfile
+
+from xl import settings, event
 from xl.covers import MANAGER as cover_manager
 
+logger = logging.getLogger(__name__)
 ORG_MPRIS_MEDIAPLAYER2="org.mpris.MediaPlayer2"
 ORG_MPRIS_MEDIAPLAYER2_PLAYER="org.mpris.MediaPlayer2.Player"
 ORG_MPRIS_MEDIAPLAYER2_TRACKLIST="org.mpris.MediaPlayer2.TrackList"
@@ -40,34 +43,60 @@ class Mpris2Adapter(dbus.service.Object):
 #        super(Mpris2Adapter, self).__init__(self, bus, unicode('/org/mpris/MediaPlayer2'))
         dbus.service.Object.__init__(self, bus, '/org/mpris/MediaPlayer2')
         self.exaile = exaile
+
+        self._bind_events()
+
+    def _bind_events(self):
+        for e in ['playback_player_end', 'playback_player_start',
+                'playback_toggle_pause']:
+            event.add_callback(self.status_changed, e)
+
+    def status_changed(self, evt, exaile, data):
+        props = {'PlaybackStatus': self.PlaybackStatus()}
+        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
+
+    @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss')
+    def Get(self, interface, prop):
+        logger.info('dbus get prop: ' + prop)
+        if hasattr(self, prop):
+            result = getattr(self, prop)()
+            return result
+        return None
         
+    @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
+    def PropertiesChanged(self, interface, updated, invalid):
+        logger.info("fired")
+
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
     def Raise(self):
-        pass
+        self.exaile.gui.main.window.show()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
     def Quit(self):
         self.exaile.quit()
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2, out_signature="b")
     def CanQuit(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2, out_signature="b")
     def CanRaise(self):
-        return False
+        return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2, out_signature="b")
     def HasTrackList(self):
         return False
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2, out_signature="s")
     def Identity(self):
         return "Exaile"
     
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2, out_signature="s")
     def DesktopEntry(self):
         return "/usr/share/applications/exaile.desktop"
+
+    def SupportedUriSchemes(self):
+        ##TODO
+        return ['http', 'https', 'file']
+
+    def SupportedMimeTypes(self):
+        ##TODO
+        return ['audio/mpeg', 'application/ogg']
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Next(self):
@@ -83,7 +112,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def PlayPause(self):
-        if not self.exaile.player.is_playing():
+        if self.exaile.player.is_stopped():
             self.exaile.queue.play()
         else:
             self.exaile.player.toggle_pause()
@@ -98,7 +127,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, in_signature='x')
     def Seek(self, offset):
-        pass
+        self.exaile.player.seek(offset)
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, in_signature='ox')
     def SetPosition(self, track_id, position):
@@ -108,67 +137,68 @@ class Mpris2Adapter(dbus.service.Object):
     def OpenUri(self, uri):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='s')
     def PlaybackStatus(self):
-        pass
+        if self.exaile.player.is_playing():
+            return 'Playing'
+        elif self.exaile.player.is_paused():
+            return 'Paused'
+        else:
+            return 'Stopped'
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='s')
     def LoopStatus(self):
-        pass
+        playlist = self.exaile.queue.current_playlist
+        if playlist.repeat_enabled:
+            if playlist.repeat_mode == 'playlist':
+                return 'Playlist'
+            else:
+                return 'Track'
+        else:
+            return 'None'
+        
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def Rate(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='a{sv}')
     def Metadata(self):
-        pass
+        current_track = self.exaile.player.current
+        if current_track is not None:
+            return self._get_metadata(current_track)
+        else:
+            return {}
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def Volume(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='x')
     def Position(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def MinimumRate(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='d')
     def MaximumRate(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanGoNext(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanGoPrevious(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanPlay(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanPause(self):
         return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanSeek(self):
         return False
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def CanControl(self):
-        pass
+        return True
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, out_signature='b')
     def Shuffle(self):
         return settings.get_option('playback/shuffle', False)
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, in_signature='ao', out_signature='aa{sv}')
     def GetTracksMetadata(self, track_ids):
         pass
         
@@ -188,23 +218,27 @@ class Mpris2Adapter(dbus.service.Object):
     def Tracks(self):
         pass
 
-    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_TRACKLIST, out_signature='b')
     def CanEditTracks(self):
         return False
 
-def get_metadata(track):
-    ## mpris2.0 meta map, defined at http://xmms2.org/wiki/MPRIS_Metadata
-    meta = {}
-    meta['xesam:title'] = unicode(track.get_tag_raw('title'))
-    meta['xesam:album'] = unicode(track.get_tag_raw('album'))
-    meta['xesam:artist'] = unicode(track.get_tag_raw('artist'))
 
-    meta['mpris:length'] = int(track.get_tag_raw('__length'))*1000
-    cover_urls = cover_manager.find_covers(track)
-    if len(cover_urls) > 0:
-        meta['mpris:artUrl'] = unicode(cover_urls[0])
-    meta['mpris:trackid'] = unicode(track.uri)
+    def _get_metadata(self, track):
+        ## mpris2.0 meta map, defined at http://xmms2.org/wiki/MPRIS_Metadata
+        meta = {}
+        meta['xesam:title'] = unicode(track.get_tag_raw('title')[0])
+        meta['xesam:album'] = unicode(track.get_tag_raw('album')[0])
+        meta['xesam:artist'] = [unicode(track.get_tag_raw('artist')[0])]
+    
+#        meta['mpris:length'] = dbus.types.Int64(int(track.get_tag_raw('__length'))*1000)
 
-    return meta
+        ## this is a workaround, write data to a tmp file and return name
+        cover_data = cover_manager.get_cover(track)
+        cover_temp = tempfile.NamedTemporaryFile()
+        cover_temp.write(cover_data)
+        meta['mpris:artUrl'] = "file://"+cover_temp.name
+
+        meta['mpris:trackid'] = track.get_tag_raw('__loc')
+    
+        return meta
 
 
