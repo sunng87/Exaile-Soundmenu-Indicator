@@ -241,6 +241,7 @@ class Mpris2Adapter(dbus.service.Object):
         meta['mpris:artUrl'] = "file://"+cover_temp.name
 
         meta['mpris:trackid'] = track.get_tag_raw('__loc')
+        meta['xesam:url'] = track.get_tag_raw('__loc')
     
         return meta
 
