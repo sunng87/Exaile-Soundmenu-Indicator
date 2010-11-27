@@ -52,10 +52,12 @@ class Mpris2Adapter(dbus.service.Object):
             event.add_callback(self.status_changed, e)
 
     def status_changed(self, evt, exaile, data):
-        props = {'PlaybackStatus': self.PlaybackStatus()}
+        props = {}
+        props['PlaybackStatus'] = self.PlaybackStatus()
+        props['Metadata'] = self.Metadata()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
-    @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss')
+    @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
     def Get(self, interface, prop):
         logger.info('dbus get prop: ' + prop)
         if hasattr(self, prop):
@@ -159,6 +161,7 @@ class Mpris2Adapter(dbus.service.Object):
     def Rate(self):
         pass
 
+    @dbus.service.method(dbus.PROPERTIES_IFACE, out_signature='a{sv}')
     def Metadata(self):
         current_track = self.exaile.player.current
         if current_track is not None:
