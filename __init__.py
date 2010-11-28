@@ -25,21 +25,39 @@
 # from your version.
 #
 
+import os
+import fnmatch
+
 import indicate
 import dbus
 
 from mpris2 import Mpris2Adapter
 
+from xl import event
+
 MPRIS2 = None
 def enable(exaile):
+    if exaile.loading:
+        event.add_callback(_enable, "exaile_loaded")
+    else:
+        _enable(None, exaile, None)
+
+def _enable(nothing, exaile, nothing2):
     global MPRIS2
     MPRIS2 = Mpris2Manager(exaile)
     MPRIS2.acquire()
     init_indicate()
+    event.add_callback(_clean_tmp, 'quit_application')
 
 def disable(exaile):
     global MPRIS2
     MPRIS2.release()
+    event.remove_callback(_clean_tmp, 'quit_application')
+
+def _clean_tmp(type, exaile, data):
+    for tmp in os.listdir('/tmp'):
+        if fnmatch.fnmatch(tmp, 'exaile-soundmenu*'):
+            os.remove('/tmp/'+tmp)
 
 def init_indicate():
     server = indicate.indicate_server_ref_default()
