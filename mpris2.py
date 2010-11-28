@@ -59,23 +59,17 @@ class Mpris2Adapter(dbus.service.Object):
         props['Metadata'] = self.Metadata()
         props['CanGoNext'] = self.CanGoNext()
         props['CanGoPrevious']  = self.CanGoPrevious()
-        props['CanPause'] = self.CanPause()
-        props['CanPlay'] = self.CanPlay()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
     def on_playback_end(self, evt, exaile, data):
         props = {}
-        props['Metadata'] = self.Metadata()
-        props['CanPause'] = self.CanPause()
-        props['CanPlay'] = self.CanPlay()
+#        props['Metadata'] = self.Metadata()
         props['PlaybackStatus'] = self.PlaybackStatus()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
     def on_playback_toggle_pause(self, evt, exaile, data):
         props = {}
         props['PlaybackStatus'] = self.PlaybackStatus()
-        props['CanPause'] = self.CanPause()
-        props['CanPlay'] = self.CanPlay()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
@@ -207,6 +201,8 @@ class Mpris2Adapter(dbus.service.Object):
         return not ((len(playlist)-1) == playlist.index(track))
 
     def CanGoPrevious(self):
+        track = self.exaile.player.current
+        playlist = self.exaile.queue.current_playlist
         return not (playlist.index(track) == 0)
 
     def CanPlay(self):
@@ -254,7 +250,7 @@ class Mpris2Adapter(dbus.service.Object):
         meta['xesam:album'] = unicode(track.get_tag_raw('album')[0])
         meta['xesam:artist'] = dbus.types.Array([unicode(track.get_tag_raw('artist')[0])], signature='s')
     
-        meta['mpris:length'] = dbus.types.Int64(int(track.get_tag_raw('__length'))*1000)
+        meta['mpris:length'] = dbus.types.Int64(int(track.get_tag_raw('__length') or 0)*1000)
 
         ## this is a workaround, write data to a tmp file and return name
         meta['mpris:artUrl'] = self._get_cover_url(track)
