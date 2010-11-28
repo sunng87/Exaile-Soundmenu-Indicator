@@ -49,6 +49,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     def _bind_events(self):
         event.add_callback(self.on_playback_start, 'playback_track_start')
+        event.add_callback(self.on_playback_start, 'playback_player_start')
         event.add_callback(self.on_playback_end, 'playback_track_end')
         event.add_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
 
