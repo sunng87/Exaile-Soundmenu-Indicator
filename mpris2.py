@@ -45,16 +45,27 @@ class Mpris2Adapter(dbus.service.Object):
         self.exaile = exaile
 
         self._bind_events()
+        self.cover_cache = {}
 
     def _bind_events(self):
-        for e in ['playback_player_end', 'playback_player_start',
-                'playback_toggle_pause']:
-            event.add_callback(self.status_changed, e)
+        event.add_callback(self.on_playback_start, 'playback_player_start')
+        event.add_callback(self.on_playback_end, 'playback_player_end')
+        event.add_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
 
-    def status_changed(self, evt, exaile, data):
+    def on_playback_start(self, evt, exaile, data):
         props = {}
         props['PlaybackStatus'] = self.PlaybackStatus()
         props['Metadata'] = self.Metadata()
+        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
+
+    def on_playback_end(self, evt, exaile, data):
+        props = {}
+        props['PlaybackStatus'] = self.PlaybackStatus()
+        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
+
+    def on_playback_toggle_pause(self, evt, exaile, data):
+        props = {}
+        props['PlaybackStatus'] = self.PlaybackStatus()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
@@ -230,19 +241,26 @@ class Mpris2Adapter(dbus.service.Object):
         meta = {}
         meta['xesam:title'] = unicode(track.get_tag_raw('title')[0])
         meta['xesam:album'] = unicode(track.get_tag_raw('album')[0])
-        meta['xesam:artist'] = [unicode(track.get_tag_raw('artist')[0])]
+        meta['xesam:artist'] = dbus.types.Array([unicode(track.get_tag_raw('artist')[0])], signature='s')
     
-#        meta['mpris:length'] = dbus.types.Int64(int(track.get_tag_raw('__length'))*1000)
+        meta['mpris:length'] = dbus.types.Int64(int(track.get_tag_raw('__length'))*1000)
 
         ## this is a workaround, write data to a tmp file and return name
-        cover_data = cover_manager.get_cover(track)
-        cover_temp = tempfile.NamedTemporaryFile()
-        cover_temp.write(cover_data)
-        meta['mpris:artUrl'] = "file://"+cover_temp.name
+        meta['mpris:artUrl'] = self._get_cover_url(track)
 
         meta['mpris:trackid'] = track.get_tag_raw('__loc')
         meta['xesam:url'] = track.get_tag_raw('__loc')
     
-        return meta
+        return dbus.types.Dictionary(meta, signature='sv', variant_level=1)
+
+    def _get_cover_url(self, track):
+        trackid = track.get_tag_raw('__loc')
+        if trackid not in self.cover_cache:
+            cover_data = cover_manager.get_cover(track)
+            cover_temp = tempfile.NamedTemporaryFile(prefix='exaile-soundmenu', delete=False)
+            cover_temp.write(cover_data)
+            cover_temp.close()
+            self.cover_cache[trackid] = "file://"+cover_temp.name
+        return self.cover_cache[trackid]
 
 
