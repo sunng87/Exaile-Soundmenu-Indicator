@@ -48,24 +48,33 @@ class Mpris2Adapter(dbus.service.Object):
         self.cover_cache = {}
 
     def _bind_events(self):
-        event.add_callback(self.on_playback_start, 'playback_player_start')
-        event.add_callback(self.on_playback_end, 'playback_player_end')
+        event.add_callback(self.on_playback_start, 'playback_track_start')
+        event.add_callback(self.on_playback_end, 'playback_track_end')
         event.add_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
 
     def on_playback_start(self, evt, exaile, data):
         props = {}
         props['PlaybackStatus'] = self.PlaybackStatus()
         props['Metadata'] = self.Metadata()
+        props['CanGoNext'] = self.CanGoNext()
+        props['CanGoPrevious']  = self.CanGoPrevious()
+        props['CanPause'] = self.CanPause()
+        props['CanPlay'] = self.CanPlay()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
     def on_playback_end(self, evt, exaile, data):
         props = {}
+        props['Metadata'] = self.Metadata()
+        props['CanPause'] = self.CanPause()
+        props['CanPlay'] = self.CanPlay()
         props['PlaybackStatus'] = self.PlaybackStatus()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
     def on_playback_toggle_pause(self, evt, exaile, data):
         props = {}
         props['PlaybackStatus'] = self.PlaybackStatus()
+        props['CanPause'] = self.CanPause()
+        props['CanPlay'] = self.CanPlay()
         self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
@@ -172,7 +181,6 @@ class Mpris2Adapter(dbus.service.Object):
     def Rate(self):
         pass
 
-    @dbus.service.method(dbus.PROPERTIES_IFACE, out_signature='a{sv}')
     def Metadata(self):
         current_track = self.exaile.player.current
         if current_track is not None:
@@ -193,16 +201,18 @@ class Mpris2Adapter(dbus.service.Object):
         pass
 
     def CanGoNext(self):
-        return True
+        track = self.exaile.player.current
+        playlist = self.exaile.queue.current_playlist
+        return not ((len(playlist)-1) == playlist.index(track))
 
     def CanGoPrevious(self):
-        return True
+        return not (playlist.index(track) == 0)
 
     def CanPlay(self):
-        return True
+        return not self.exaile.player.is_playing()
 
     def CanPause(self):
-        return True
+        return self.exaile.player.is_playing()
 
     def CanSeek(self):
         return False
