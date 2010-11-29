@@ -30,12 +30,14 @@ import fnmatch
 
 import indicate
 import dbus
+import gtk
 
 from mpris2 import Mpris2Adapter
 
-from xl import event
+from xl import event, settings
 
 MPRIS2 = None
+_WINDOW_STATE_HANDLER = None
 def enable(exaile):
     if exaile.loading:
         event.add_callback(_enable, "exaile_loaded")
@@ -48,11 +50,20 @@ def _enable(nothing, exaile, nothing2):
     MPRIS2.acquire()
     init_indicate()
     event.add_callback(_clean_tmp, 'quit_application')
+    _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("window_state_event", _destroy_window_and_tray, exaile)
+    settings.set_option('gui/use_tray', False)
+    settings.set_option('gui/minimize_to_tray', False)
 
 def disable(exaile):
     global MPRIS2
     MPRIS2.release()
     event.remove_callback(_clean_tmp, 'quit_application')
+    if _WINDOW_STATE_HANDLER is not None:
+        exaile.gui.main.window.disconnect(_WINDOW_STATE_HANDLER)
+
+def _destroy_window_and_tray(window, event, exaile):
+    if event.changed_mask & gtk.gdk.WINDOW_STATE_ICONIFIED:
+        window.hide()
 
 def _clean_tmp(type, exaile, data):
     for tmp in os.listdir('/tmp'):
