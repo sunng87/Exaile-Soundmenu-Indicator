@@ -44,15 +44,7 @@ class Mpris2Adapter(dbus.service.Object):
         dbus.service.Object.__init__(self, bus, '/org/mpris/MediaPlayer2')
         self.exaile = exaile
 
-        self._bind_events()
         self.cover_cache = {}
-
-    def _bind_events(self):
-        event.add_callback(self.on_playback_start, 'playback_track_start')
-        event.add_callback(self.on_playback_start, 'playback_player_start')
-        event.add_callback(self.on_playback_end, 'playback_track_end')
-        event.add_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
-        event.add_callback(self.on_tags_update, 'track_tags_changed')
 
     def on_playback_start(self, evt, exaile, data):
         props = {}

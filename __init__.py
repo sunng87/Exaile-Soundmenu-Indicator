@@ -48,6 +48,7 @@ def _enable(nothing, exaile, nothing2):
     global MPRIS2
     MPRIS2 = Mpris2Manager(exaile)
     MPRIS2.acquire()
+    MPRIS2.register_events()
     init_indicate()
     event.add_callback(_clean_tmp, 'quit_application')
     _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("window_state_event", _destroy_window_and_tray, exaile)
@@ -56,6 +57,7 @@ def _enable(nothing, exaile, nothing2):
 
 def disable(exaile):
     global MPRIS2
+    MPRIS2.unregister_events()
     MPRIS2.release()
     event.remove_callback(_clean_tmp, 'quit_application')
     if _WINDOW_STATE_HANDLER is not None:
@@ -89,10 +91,24 @@ class Mpris2Manager(object):
             self.bus = dbus.service.BusName(DBUS_OBJECT_NAME, bus=dbus.SessionBus())
         self.adapter = Mpris2Adapter(self.exaile, self.bus)
 
+    def register_events(self):
+        event.add_callback(self.adapter.on_playback_start, 'playback_track_start')
+        event.add_callback(self.adapter.on_playback_start, 'playback_player_start')
+        event.add_callback(self.adapter.on_playback_end, 'playback_track_end')
+        event.add_callback(self.adapter.on_playback_toggle_pause, 'playback_toggle_pause')
+        event.add_callback(self.adapter.on_tags_update, 'track_tags_changed')
+
     def release(self):
         if self.adapter is not None:
             self.adapter.remove_from_connection()
         if self.bus is not None:
             self.bus.get_bus().release_name(self.bus.get_name())
+
+    def unregister_events(self):
+        event.remove_callback(self.adapter.on_playback_start, 'playback_track_start')
+        event.remove_callback(self.adapter.on_playback_start, 'playback_player_start')
+        event.remove_callback(self.adapter.on_playback_end, 'playback_track_end')
+        event.remove_callback(self.adapter.on_playback_toggle_pause, 'playback_toggle_pause')
+        event.remove_callback(self.adapter.on_tags_update, 'track_tags_changed')
         
 
