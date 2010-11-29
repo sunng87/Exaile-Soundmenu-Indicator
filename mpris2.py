@@ -246,14 +246,20 @@ class Mpris2Adapter(dbus.service.Object):
     def _get_metadata(self, track):
         ## mpris2.0 meta map, defined at http://xmms2.org/wiki/MPRIS_Metadata
         meta = {}
-        meta['xesam:title'] = unicode(track.get_tag_raw('title')[0])
-        meta['xesam:album'] = unicode(track.get_tag_raw('album')[0])
-        meta['xesam:artist'] = dbus.types.Array([unicode(track.get_tag_raw('artist')[0])], signature='s')
+
+        title = track.get_tag_raw('title')[0] if track.get_tag_raw('title') else ""
+        meta['xesam:title'] = unicode(title)  
+        album = track.get_tag_raw('album')[0] if track.get_tag_raw('album') else ""
+        meta['xesam:album'] = unicode(album)
+        artist = track.get_tag_raw('artist')[0] if track.get_tag_raw('artist') else ""
+        meta['xesam:artist'] = dbus.types.Array([unicode(artist)], signature='s')
     
         meta['mpris:length'] = dbus.types.Int64(int(track.get_tag_raw('__length') or 0)*1000)
 
         ## this is a workaround, write data to a tmp file and return name
-        meta['mpris:artUrl'] = self._get_cover_url(track)
+        cover_temp = self._get_cover_url(track)
+        if cover_temp is not None:
+            meta['mpris:artUrl'] = cover_temp
 
         meta['mpris:trackid'] = track.get_tag_raw('__loc')
         meta['xesam:url'] = track.get_tag_raw('__loc')
@@ -264,10 +270,13 @@ class Mpris2Adapter(dbus.service.Object):
         trackid = track.get_tag_raw('__loc')
         if trackid not in self.cover_cache:
             cover_data = cover_manager.get_cover(track)
-            cover_temp = tempfile.NamedTemporaryFile(prefix='exaile-soundmenu', delete=False)
-            cover_temp.write(cover_data)
-            cover_temp.close()
-            self.cover_cache[trackid] = "file://"+cover_temp.name
+            if cover_data is not None:
+                cover_temp = tempfile.NamedTemporaryFile(prefix='exaile-soundmenu', delete=False)
+                cover_temp.write(cover_data)
+                cover_temp.close()
+                self.cover_cache[trackid] = "file://"+cover_temp.name
+            else:
+                return None
         return self.cover_cache[trackid]
 
 
