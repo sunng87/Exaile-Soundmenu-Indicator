@@ -85,7 +85,8 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
     def Raise(self):
-        self.exaile.gui.main.toggle_visible()
+#        self.exaile.gui.main.toggle_visible()
+        self.exaile.gui.main.window.show()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
     def Quit(self):
