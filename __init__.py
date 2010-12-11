@@ -65,7 +65,9 @@ def disable(exaile):
 
 def _destroy_window_and_tray(window, event, exaile):
     if event.changed_mask & gtk.gdk.WINDOW_STATE_ICONIFIED:
+        print '-----------'
         window.hide()
+        window.deiconify()
 
 def _clean_tmp(type, exaile, data):
     for tmp in os.listdir('/tmp'):

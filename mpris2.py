@@ -28,6 +28,7 @@
 import dbus
 
 import logging
+import time
 import tempfile
 
 from xl import settings, event
@@ -85,8 +86,9 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
     def Raise(self):
-#        self.exaile.gui.main.toggle_visible()
-        self.exaile.gui.main.window.show()
+        print '+++++++++++++'
+        self.exaile.gui.main.toggle_visible(True)
+        print '**********'
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
     def Quit(self):
