@@ -51,9 +51,11 @@ def _enable(nothing, exaile, nothing2):
     MPRIS2.register_events()
     init_indicate()
     event.add_callback(_clean_tmp, 'quit_application')
-    _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("window_state_event", _destroy_window_and_tray, exaile)
+#    _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("window_state_event", _destroy_window_and_tray, exaile)
+    _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("delete-event", _delete_event, exaile)
     settings.set_option('gui/use_tray', False)
     settings.set_option('gui/minimize_to_tray', False)
+    exaile.gui.main.controller.tray_icon = True
 
 def disable(exaile):
     global MPRIS2
@@ -63,9 +65,18 @@ def disable(exaile):
     if _WINDOW_STATE_HANDLER is not None:
         exaile.gui.main.window.disconnect(_WINDOW_STATE_HANDLER)
 
+def _delete_event(window, event, exaile):
+    """ window behavior on closing, according to sound menu spec:
+        https://wiki.ubuntu.com/SoundMenu
+        """
+    if exaile.player.is_playing():
+        window.hide()
+    else:
+        exaile.gui.main.quit()
+    return True
+
 def _destroy_window_and_tray(window, event, exaile):
     if event.changed_mask & gtk.gdk.WINDOW_STATE_ICONIFIED:
-        print '-----------'
         window.hide()
         window.deiconify()
 
