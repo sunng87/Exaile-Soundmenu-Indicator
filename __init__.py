@@ -86,10 +86,12 @@ def _clean_tmp(type, exaile, data):
             os.remove('/tmp/'+tmp)
 
 def init_indicate():
+    print 'debug init indicate'
     server = indicate.indicate_server_ref_default()
     server.set_type('music.exaile')
     server.set_desktop_file('/usr/share/applications/exaile.desktop')
     server.show()
+    print 'debug init indicate'
 
 DBUS_OBJECT_NAME = 'org.mpris.MediaPlayer2.exaile'
 class Mpris2Manager(object):
@@ -103,6 +105,7 @@ class Mpris2Manager(object):
         else:
             self.bus = dbus.service.BusName(DBUS_OBJECT_NAME, bus=dbus.SessionBus())
         self.adapter = Mpris2Adapter(self.exaile, self.bus)
+        self.adapter.populate('DesktopEntry')
 
     def register_events(self):
         event.add_callback(self.adapter.on_playback_start, 'playback_track_start')

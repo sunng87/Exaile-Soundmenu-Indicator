@@ -47,6 +47,12 @@ class Mpris2Adapter(dbus.service.Object):
 
         self.cover_cache = {}
 
+    def populate(self, *prop_names):
+        props = {}
+        for p in prop_names:
+            props[p] = getattr(self, p)()
+        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2, props, [])
+
     def on_playback_start(self, evt, exaile, data):
         props = {}
         props['PlaybackStatus'] = self.PlaybackStatus()
@@ -79,10 +85,11 @@ class Mpris2Adapter(dbus.service.Object):
             result = getattr(self, prop)()
             return result
         return None
-        
+
     @dbus.service.signal(dbus.PROPERTIES_IFACE, signature='sa{sv}as')
     def PropertiesChanged(self, interface, updated, invalid):
-        logger.info("fired")
+        #logger.info("fired")
+        pass
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2)
     def Raise(self):
@@ -105,7 +112,7 @@ class Mpris2Adapter(dbus.service.Object):
         return "Exaile"
     
     def DesktopEntry(self):
-        return "/usr/share/applications/exaile.desktop"
+        return "exaile"
 
     def SupportedUriSchemes(self):
         ##TODO
