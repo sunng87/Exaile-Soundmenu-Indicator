@@ -47,36 +47,11 @@ class Mpris2Adapter(dbus.service.Object):
 
         self.cover_cache = {}
 
-    def populate(self, *prop_names):
+    def populate(self, interface, *prop_names):
         props = {}
         for p in prop_names:
             props[p] = getattr(self, p)()
-        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2, props, [])
-
-    def on_playback_start(self, evt, exaile, data):
-        props = {}
-        props['PlaybackStatus'] = self.PlaybackStatus()
-        props['Metadata'] = self.Metadata()
-        props['CanGoNext'] = self.CanGoNext()
-        props['CanGoPrevious']  = self.CanGoPrevious()
-        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
-
-    def on_playback_end(self, evt, exaile, data):
-        props = {}
-#        props['Metadata'] = self.Metadata()
-        props['PlaybackStatus'] = self.PlaybackStatus()
-        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
-
-    def on_playback_toggle_pause(self, evt, exaile, data):
-        props = {}
-        props['PlaybackStatus'] = self.PlaybackStatus()
-        self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
-
-    def on_tags_update(self, evt, track, tag):
-        if track == self.exaile.player.current:
-            props = {}
-            props['Metadata'] = self.Metadata()
-            self.PropertiesChanged(ORG_MPRIS_MEDIAPLAYER2_PLAYER, props, [])
+        self.PropertiesChanged(interface, props, [])
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
     def Get(self, interface, prop):

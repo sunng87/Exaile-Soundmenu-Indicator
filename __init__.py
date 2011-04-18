@@ -33,6 +33,9 @@ import dbus
 import gtk
 
 from mpris2 import Mpris2Adapter
+from mpris2 import ORG_MPRIS_MEDIAPLAYER2
+from mpris2 import ORG_MPRIS_MEDIAPLAYER2_PLAYER
+from mpris2 import ORG_MPRIS_MEDIAPLAYER2_TRACKLIST
 
 from xl import event, settings
 
@@ -53,9 +56,17 @@ def _enable(nothing, exaile, nothing2):
     event.add_callback(_clean_tmp, 'quit_application')
 #    _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("window_state_event", _destroy_window_and_tray, exaile)
     _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("delete-event", _delete_event, exaile)
-    settings.set_option('gui/use_tray', False)
+    patch_tray_icon()
+
+def patch_tray_icon():    
     settings.set_option('gui/minimize_to_tray', False)
-    exaile.gui.main.controller.tray_icon = True
+    ## use this option to prevent exaile initialize the trayicon
+    exaile.gui.main.controller.tray_icon = DummyTrayIcon()
+    settings.set_option('gui/use_tray', False)
+
+class DummyTrayIcon(object):
+    def destroy(self):
+        pass
 
 def disable(exaile):
     global MPRIS2
@@ -105,14 +116,14 @@ class Mpris2Manager(object):
             self.bus = dbus.service.BusName(DBUS_OBJECT_NAME, bus=dbus.SessionBus())
         self.adapter = Mpris2Adapter(self.exaile, self.bus)
         ### for Natty registration
-        self.adapter.populate('DesktopEntry')
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2, 'DesktopEntry')
 
     def register_events(self):
-        event.add_callback(self.adapter.on_playback_start, 'playback_track_start')
-        event.add_callback(self.adapter.on_playback_start, 'playback_player_start')
-        event.add_callback(self.adapter.on_playback_end, 'playback_track_end')
-        event.add_callback(self.adapter.on_playback_toggle_pause, 'playback_toggle_pause')
-        event.add_callback(self.adapter.on_tags_update, 'track_tags_changed')
+        event.add_callback(self.on_playback_start, 'playback_track_start')
+        event.add_callback(self.on_playback_start, 'playback_player_start')
+        event.add_callback(self.on_playback_end, 'playback_track_end')
+        event.add_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
+        event.add_callback(self.on_tags_update, 'track_tags_changed')
 
     def release(self):
         if self.adapter is not None:
@@ -121,10 +132,26 @@ class Mpris2Manager(object):
             self.bus.get_bus().release_name(self.bus.get_name())
 
     def unregister_events(self):
-        event.remove_callback(self.adapter.on_playback_start, 'playback_track_start')
-        event.remove_callback(self.adapter.on_playback_start, 'playback_player_start')
-        event.remove_callback(self.adapter.on_playback_end, 'playback_track_end')
-        event.remove_callback(self.adapter.on_playback_toggle_pause, 'playback_toggle_pause')
-        event.remove_callback(self.adapter.on_tags_update, 'track_tags_changed')
+        event.remove_callback(self.on_playback_start, 'playback_track_start')
+        event.remove_callback(self.on_playback_start, 'playback_player_start')
+        event.remove_callback(self.on_playback_end, 'playback_track_end')
+        event.remove_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
+        event.remove_callback(self.on_tags_update, 'track_tags_changed')
         
+    def on_playback_start(self, evt, exaile, data):
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 
+                *('PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious'))
+
+    def on_playback_end(self, evt, exaile, data):
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 
+                'PlaybackStatus')
+
+    def on_playback_toggle_pause(self, evt, exaile, data):
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                'PlaybackStatus')
+
+    def on_tags_update(self, evt, track, data):
+        if track == self.exaile.player.current:
+            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                    'Metadata')
 
