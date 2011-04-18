@@ -59,8 +59,8 @@ def _enable(nothing, exaile, nothing2):
     patch_tray_icon()
 
 def patch_tray_icon():    
+    ### currently this function still not work 
     settings.set_option('gui/minimize_to_tray', False)
-    ## use this option to prevent exaile initialize the trayicon
     exaile.gui.main.controller.tray_icon = DummyTrayIcon()
     settings.set_option('gui/use_tray', False)
 
