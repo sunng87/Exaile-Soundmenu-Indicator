@@ -56,9 +56,9 @@ def _enable(nothing, exaile, nothing2):
     event.add_callback(_clean_tmp, 'quit_application')
 #    _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("window_state_event", _destroy_window_and_tray, exaile)
     _WINDOW_STATE_HANDLER = exaile.gui.main.window.connect("delete-event", _delete_event, exaile)
-    patch_tray_icon()
+    patch_tray_icon(exaile)
 
-def patch_tray_icon():    
+def patch_tray_icon(exaile):    
     ### currently this function still not work 
     settings.set_option('gui/minimize_to_tray', False)
     exaile.gui.main.controller.tray_icon = DummyTrayIcon()
