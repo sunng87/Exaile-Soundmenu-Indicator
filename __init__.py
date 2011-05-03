@@ -28,7 +28,10 @@
 import os
 import fnmatch
 
-import indicate
+try:
+    import indicate
+except ImportError:
+    pass
 import dbus
 import gtk
 
@@ -92,16 +95,20 @@ def _destroy_window_and_tray(window, event, exaile):
         window.deiconify()
 
 def _clean_tmp(type, exaile, data):
-    for tmp in os.listdir('/tmp'):
+    tmpdir = '~/.cache/exaile/'
+    for tmp in os.listdir(tmpdir):
         if fnmatch.fnmatch(tmp, 'exaile-soundmenu*'):
-            os.remove('/tmp/'+tmp)
+            os.remove(os.path.join(tmpdir, tmp))
 
 def init_indicate():
     ## for Maverick registration
-    server = indicate.indicate_server_ref_default()
-    server.set_type('music.exaile')
-    server.set_desktop_file('/usr/share/applications/exaile.desktop')
-    server.show()
+    try:
+        server = indicate.indicate_server_ref_default()
+        server.set_type('music.exaile')
+        server.set_desktop_file('/usr/share/applications/exaile.desktop')
+        server.show()
+    except:
+        pass
 
 DBUS_OBJECT_NAME = 'org.mpris.MediaPlayer2.exaile'
 class Mpris2Manager(object):
