@@ -95,7 +95,7 @@ def _destroy_window_and_tray(window, event, exaile):
         window.deiconify()
 
 def _clean_tmp(type, exaile, data):
-    tmpdir = '~/.cache/exaile/'
+    tmpdir = os.path.expanduser('~/.cache/exaile/')
     for tmp in os.listdir(tmpdir):
         if fnmatch.fnmatch(tmp, 'exaile-soundmenu*'):
             os.remove(os.path.join(tmpdir, tmp))
