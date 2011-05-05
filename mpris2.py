@@ -30,6 +30,7 @@ import dbus
 import logging
 import time
 import tempfile
+import os
 
 from xl import settings, event
 from xl.covers import MANAGER as cover_manager
@@ -253,7 +254,8 @@ class Mpris2Adapter(dbus.service.Object):
         if trackid not in self.cover_cache:
             cover_data = cover_manager.get_cover(track)
             if cover_data is not None:
-                cover_temp = tempfile.NamedTemporaryFile(prefix='exaile-soundmenu', dir='~/.cache/exaile', delete=False)
+                dir = os.path.expanduser('~/.cache/exaile')
+                cover_temp = tempfile.NamedTemporaryFile(prefix='exaile-soundmenu', dir=dir, delete=False)
                 cover_temp.write(cover_data)
                 cover_temp.close()
                 self.cover_cache[trackid] = "file://"+cover_temp.name
