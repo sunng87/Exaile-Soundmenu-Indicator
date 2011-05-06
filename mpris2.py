@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 ORG_MPRIS_MEDIAPLAYER2="org.mpris.MediaPlayer2"
 ORG_MPRIS_MEDIAPLAYER2_PLAYER="org.mpris.MediaPlayer2.Player"
 ORG_MPRIS_MEDIAPLAYER2_TRACKLIST="org.mpris.MediaPlayer2.TrackList"
+ORG_MPRIS_MEDIAPLAYER2_PLAYLISTS="org.mpris.MediaPlayer2.Playlists"
 class Mpris2Adapter(dbus.service.Object):
     """ interface defined by org.mpris.MediaPlayer2"""
     def __init__(self, exaile, bus):
@@ -225,6 +226,27 @@ class Mpris2Adapter(dbus.service.Object):
     def CanEditTracks(self):
         return False
 
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYLISTS, in_signature='o')
+    def ActivatePlaylist(self, playlist_id):
+        pass
+
+    @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYLISTS, in_signature='uusb', out_signature='a(oss)')
+    def GetPlaylists(self, index, maxcount, order, reverse_order):
+        pass
+
+    def PlaylistCount(self):
+        return len(self.exaile.main.playlists.list_playlists())
+
+    def Orderings(self):
+        return "User"
+
+    def ActivePlaylist(self):
+        playlist = self.exaile.gui.main.get_selected_playlist().playlist
+        dbus_playlist = []
+        dbus_playlist[0] = True
+        dbus_playlist[1] = playlist.name ## name is not id in exaile
+        dbus_playlist[2] = playlist.name
+        return dbus_playlist
 
     def _get_metadata(self, track):
         ## mpris2.0 meta map, defined at http://xmms2.org/wiki/MPRIS_Metadata
