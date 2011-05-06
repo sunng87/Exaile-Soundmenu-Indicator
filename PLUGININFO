@@ -1,4 +1,4 @@
-Version='0.0.4'
+Version='0.0.5'
 Authors=['Sun Ning <classicning@gmail.com>']
 Name=_('Sound Menu Indicator')
 Description='Sound menu support for exaile'
