@@ -257,9 +257,11 @@ class Mpris2Adapter(dbus.service.Object):
     def ActivePlaylist(self):
         playlist = self.exaile.gui.main.get_selected_playlist().playlist
         valid = True
-        playlist_id = dbus.types.ObjectPath("/org/exaile/%s" % playlist.name.replace(" ", "_")) ## name is not id in exaile
+        playlist_id = dbus.types.ObjectPath("/org/exaile/%s" % "current") ## name is not id in exaile
         display_name = playlist.name
-        return dbus.types.Struct((valid, playlist_id, display_name, ""), "boss")
+        dbus_playlist = dbus.types.Struct([playlist_id, display_name, ""], signature="(oss)")
+        dbus_active_playlist = dbus.types.Struct([valid, dbus_playlist], signature="(b(oss))")
+        return dbus_active_playlist
 
     def _get_metadata(self, track):
         ## mpris2.0 meta map, defined at http://xmms2.org/wiki/MPRIS_Metadata
