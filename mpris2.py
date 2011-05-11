@@ -234,18 +234,22 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYLISTS, in_signature='o')
     def ActivatePlaylist(self, playlist_id):
+        ##TODO
         pass
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYLISTS, in_signature='uusb', out_signature='a(oss)')
     def GetPlaylists(self, index, maxcount, order, reverse_order):
-        playlist = self.exaile.gui.main.get_selected_playlist().playlist
-        playlist_struct = dbus.types.Struct((dbus.types.ObjectPath('/org/mpris/MediaPlayer2/exaile/%s' % playlist.name.replace(" ", "_")), playlist.name, ""))
+        playlists = self.exaile.smart_playlists.list_playlists()
         dbus_playlist = []
-       	dbus_playlist.append(playlist_struct)
-        return dbus.Array(dbus_playlist, "(oss)")
+        for index,name in enumerate(playlists):
+            playlist_tuple=[dbus.types.ObjectPath('/org/exaile/playlists/%d' % index), name, ""]
+            playlist_struct = dbus.types.Struct(playlist_tuple, signature="(oss)")
+            dbus_playlist.append(playlist_struct)
+        array = dbus.types.Array(dbus_playlist, signature="(oss)")
+        return array
 
     def PlaylistCount(self):
-        return len(self.exaile.main.playlists.list_playlists())
+        return len(self.exaile.smart_playlists.list_playlists())
 
     def Orderings(self):
         return "User"
@@ -253,7 +257,7 @@ class Mpris2Adapter(dbus.service.Object):
     def ActivePlaylist(self):
         playlist = self.exaile.gui.main.get_selected_playlist().playlist
         valid = True
-        playlist_id = dbus.types.ObjectPath("/org/mpris/MediaPlayer2/exaile/%s" % playlist.name.replace(" ", "_")) ## name is not id in exaile
+        playlist_id = dbus.types.ObjectPath("/org/exaile/%s" % playlist.name.replace(" ", "_")) ## name is not id in exaile
         display_name = playlist.name
         return dbus.types.Struct((valid, playlist_id, display_name, ""), "boss")
 
