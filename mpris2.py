@@ -234,8 +234,15 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYLISTS, in_signature='o')
     def ActivatePlaylist(self, playlist_id):
-        ##TODO
-        pass
+        playlists = self.exaile.smart_playlists.list_playlists()
+        selected_index = int(playlist_id[playlist_id.rindex('/')+1:])
+        selected_playlist_name = playlists[selected_index]
+        selected_playlist = self.exaile.smart_playlists.get_playlist(selected_playlist_name)
+        selected_playlist = selected_playlist.get_playlist(collection=self.exaile.collection)
+        self.exaile.gui.main.add_playlist(selected_playlist)
+        self.exaile.gui.main.queue.set_current_playlist(selected_playlist)
+        self.exaile.player.stop()
+        self.exaile.gui.main.queue.play()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYLISTS, in_signature='uusb', out_signature='a(oss)')
     def GetPlaylists(self, index, maxcount, order, reverse_order):
