@@ -82,6 +82,9 @@ class Mpris2Adapter(dbus.service.Object):
     def Quit(self):
         self.exaile.quit()
 
+    ROOT_PROPS = ['CanQuit', 'CanRaise', 'HasTrackList', 'Identity',
+        'DesktopEntry', 'SupportedUriSchemes', 'SupportedMimeTypes']
+
     def CanQuit(self):
         return True
 
@@ -143,6 +146,11 @@ class Mpris2Adapter(dbus.service.Object):
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, in_signature='s')
     def OpenUri(self, uri):
         pass
+
+    PLAYER_PROPS = ['PlaybackStatus', 'LoopStatus', 'Rate', 'Metadata',
+        'Volume', 'Position', 'MinimumRate', 'MaximumRate',
+        'CanGoNext', 'CanGoPrevious', 'CanPlay', 'CanPause', 'CanSeek',
+        'CanControl', 'Shuffle']
 
     def PlaybackStatus(self):
         if self.exaile.player.is_playing():
@@ -229,6 +237,8 @@ class Mpris2Adapter(dbus.service.Object):
     def Tracks(self):
         pass
 
+    TRACK_PROPS = ['CanEditTracks']
+
     def CanEditTracks(self):
         return False
 
@@ -254,6 +264,8 @@ class Mpris2Adapter(dbus.service.Object):
             dbus_playlist.append(playlist_struct)
         array = dbus.types.Array(dbus_playlist, signature="(oss)")
         return array
+
+    PLAYLIST_PROPS = ['PlaylistCount', 'Orderings', 'ActivePlaylist']
 
     def PlaylistCount(self):
         return len(self.exaile.smart_playlists.list_playlists())
