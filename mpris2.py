@@ -398,7 +398,8 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def Position(self):
-        return self.exaile.player.get_position() / NANOSECOND * MICROSECOND
+        pos = self.exaile.player.get_position() / NANOSECOND * MICROSECOND
+        return dbus.Int64(pos)
 
     @property
     def Rate(self):
