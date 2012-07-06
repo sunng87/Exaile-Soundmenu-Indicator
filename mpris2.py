@@ -333,13 +333,19 @@ class Mpris2Adapter(dbus.service.Object):
     def CanGoNext(self):
         track = self.exaile.player.current
         playlist = self.exaile.queue.current_playlist
-        return not ((len(playlist)-1) == playlist.index(track))
+        try:
+            return not ((len(playlist)-1) == playlist.index(track))
+        except ValueError:
+            return False
 
     @property
     def CanGoPrevious(self):
         track = self.exaile.player.current
         playlist = self.exaile.queue.current_playlist
-        return not (playlist.index(track) == 0)
+        try:
+            return playlist.index(track) > 0
+        except ValueError:
+            return False
 
     @property
     def CanPause(self):
