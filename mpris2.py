@@ -222,6 +222,7 @@ class Mpris2Adapter(dbus.service.Object):
         pass
 
     def populate(self, interface, *prop_names):
+        logger.info("populate: %s" % repr(prop_names))
         props = {}
         for p in prop_names:
             props[p] = getattr(self, p)
