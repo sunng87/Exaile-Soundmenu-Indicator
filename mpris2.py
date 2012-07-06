@@ -483,7 +483,7 @@ class Mpris2Adapter(dbus.service.Object):
         if track is not None:
             ## MPRIS v2 meta map, defined at http://xmms2.org/wiki/MPRIS_Metadata
 
-            meta['mpris:trackid'] = self._get_trackid(track)
+            meta['mpris:trackid'] = dbus.ObjectPath(self._get_trackid(track))
 
             meta['xesam:url'] = track.get_tag_raw('__loc')
 
