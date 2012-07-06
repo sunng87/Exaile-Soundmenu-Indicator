@@ -349,11 +349,13 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def CanPause(self):
-        return self.exaile.player.is_playing()
+        # MPRIS -- return true even if currently paused
+        return (self.exaile.player.current is not None)
 
     @property
     def CanPlay(self):
-        return not self.exaile.player.is_playing()
+        # MPRIS -- return true even if currently playing
+        return len(self.exaile.queue.current_playlist) > 0
 
     @property
     def CanSeek(self):
