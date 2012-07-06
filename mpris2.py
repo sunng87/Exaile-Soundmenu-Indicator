@@ -26,14 +26,10 @@
 #
 
 import dbus
-
+import hashlib
 import logging
 import time
-import tempfile
 import os
-
-# For cover cache
-import hashlib
 
 from xl import settings, event
 from xl.covers import MANAGER as cover_manager
