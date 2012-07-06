@@ -32,6 +32,9 @@ import time
 import tempfile
 import os
 
+# For cover cache
+import hashlib
+
 from xl import settings, event
 from xl.covers import MANAGER as cover_manager
 
@@ -251,16 +254,15 @@ class Mpris2Adapter(dbus.service.Object):
 
     def _get_cover_url(self, track):
         trackid = track.get_tag_raw('__loc')
+        trackhash = hashlib.sha1(trackid).hexdigest()
         if trackid not in self.cover_cache:
             cover_data = cover_manager.get_cover(track)
             if cover_data is not None:
-                dir = os.path.expanduser('~/.cache/exaile')
-                cover_temp = tempfile.NamedTemporaryFile(prefix='exaile-soundmenu', dir=dir, delete=False)
-                cover_temp.write(cover_data)
-                cover_temp.close()
-                self.cover_cache[trackid] = "file://"+cover_temp.name
+                tempdir = os.path.expanduser("~/.cache/exaile")
+                tempfile = "%s/cover-%s" % (tempdir, trackhash)
+                with open(tempfile, 'wb') as f:
+                    f.write(cover_data)
+                self.cover_cache[trackid] = "file://%s" % tempfile
             else:
                 return None
         return self.cover_cache[trackid]
-
-
