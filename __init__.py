@@ -1,3 +1,5 @@
+# vim: ts=4:sw=4:et:
+#
 # Copyright (C) 2010 Sun Ning <classicning@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -41,6 +43,7 @@ from mpris2 import ORG_MPRIS_MEDIAPLAYER2_PLAYER
 from mpris2 import ORG_MPRIS_MEDIAPLAYER2_TRACKLIST
 
 from xl import event, settings
+from xl.player import PLAYER
 
 MPRIS2 = None
 _WINDOW_STATE_HANDLER = None
@@ -125,6 +128,9 @@ class Mpris2Manager(object):
         self.adapter = Mpris2Adapter(self.exaile, self.bus)
         ### for Natty registration
         self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2, 'DesktopEntry')
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                'PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious',
+                'CanPause', 'CanPlay')
 
     def register_events(self):
         event.add_callback(self.on_playback_start, 'playback_track_start')
@@ -134,6 +140,12 @@ class Mpris2Manager(object):
         event.add_callback(self.on_playback_pause, 'playback_toggle_pause')
         event.add_callback(self.on_tags_update, 'track_tags_changed')
         event.add_callback(self.on_option_change, 'option_set')
+        # <= 0.3.2
+        event.add_callback(self.on_playlist_change, 'tracks_reordered')
+        # >= 0.3.3
+        event.add_callback(self.on_playlist_change, 'playlist_current_position_changed')
+        event.add_callback(self.on_shuffle_change, 'playlist_shuffle_mode_changed')
+        event.add_callback(self.on_repeat_change, 'playlist_repeat_mode_changed')
         # TODO: need a "seeked" callback
 
     def release(self):
@@ -150,10 +162,19 @@ class Mpris2Manager(object):
         event.remove_callback(self.on_playback_pause, 'playback_toggle_pause')
         event.remove_callback(self.on_tags_update, 'track_tags_changed')
         event.remove_callback(self.on_option_change, 'option_set')
+        # <= 0.3.2
+        event.remove_callback(self.on_playlist_change, 'tracks_reordered')
+        # >= 0.3.3
+        event.remove_callback(self.on_playlist_change, 'playlist_current_position_changed')
+        event.remove_callback(self.on_shuffle_change, 'playlist_shuffle_mode_changed')
+        event.remove_callback(self.on_repeat_change, 'playlist_repeat_mode_changed')
 
     def on_playback_start(self, evt, exaile, data):
+        # When looping a playlist, this is called a bit too early, causing the
+        # PlaybackStatus property to contain "Paused"... Let's assume Exaile will
+        # always be playing after this event.
         self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
-                'PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious',
+                ('PlaybackStatus', 'Playing'), 'Metadata', 'CanGoNext', 'CanGoPrevious',
                 'CanPause', 'CanPlay')
 
     def on_playback_end(self, evt, exaile, data):
@@ -166,13 +187,28 @@ class Mpris2Manager(object):
                 'PlaybackStatus', 'CanPause', 'CanPlay')
 
     def on_tags_update(self, evt, track, data):
-        if track == self.exaile.player.current:
+        if track == PLAYER.current:
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Metadata')
 
     def on_option_change(self, evt, settings_manager, data):
         if data == 'playback/repeat':
-            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'LoopStatus')
+            # <= 0.3.2
+            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                    'LoopStatus', 'CanGoNext', 'CanGoPrevious')
         elif data == 'playback/shuffle':
+            # <= 0.3.2
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Shuffle')
         elif data == 'player/volume':
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Volume')
+
+    def on_shuffle_change(self, evt, playlist, data):
+        # >= 0.3.3
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Shuffle')
+
+    def on_repeat_change(self, evt, playlist, data):
+        # >= 0.3.3
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                'LoopStatus', 'CanGoNext', 'CanGoPrevious')
+
+    def on_playlist_change(self, evt, playlist, unknown):
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'CanGoNext', 'CanGoPrevious')
