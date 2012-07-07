@@ -126,6 +126,9 @@ class Mpris2Manager(object):
         self.adapter = Mpris2Adapter(self.exaile, self.bus)
         ### for Natty registration
         self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2, 'DesktopEntry')
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                'PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious',
+                'CanPause', 'CanPlay')
 
     def register_events(self):
         event.add_callback(self.on_playback_start, 'playback_track_start')
