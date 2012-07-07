@@ -33,7 +33,7 @@ import logging
 import time
 import os
 
-from xl import settings, event
+from xl import event, settings, xdg
 from xl.player import PLAYER, QUEUE
 from xl.covers import MANAGER as cover_manager
 
@@ -599,10 +599,13 @@ class Mpris2Adapter(dbus.service.Object):
         if trackid not in self.cover_cache:
             cover_data = cover_manager.get_cover(track)
             if cover_data is not None:
-                tempdir = os.path.expanduser("~/.cache/exaile")
-                tempfile = "%s/cover-%s" % (tempdir, trackhash)
-                with open(tempfile, 'wb') as f:
-                    f.write(cover_data)
+                tempfile = os.path.join(xdg.get_cache_dir(), "cover-%s" % trackhash)
+                try:
+                    with open(tempfile, 'wb') as f:
+                        f.write(cover_data)
+                except BaseException as ex:
+                    logger.error("Unable to export cover: %r" % ex)
+                    return None
                 self.cover_cache[trackid] = "file://%s" % tempfile
             else:
                 return None
