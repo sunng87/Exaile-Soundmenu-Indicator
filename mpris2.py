@@ -365,8 +365,23 @@ class Mpris2Adapter(dbus.service.Object):
     @property
     def LoopStatus(self):
         playlist = QUEUE.current_playlist
-        if playlist.repeat_enabled:
-            if playlist.repeat_mode == 'playlist':
+        if hasattr(playlist, "repeat_enabled"):
+            # <= 0.3.2
+            mode = playlist.repeat_mode
+            enabled = playlist.repeat_enabled
+            logger.debug("LoopStatus get: old, %r, %r" % (enabled, mode))
+        else:
+            # >= 0.3.3
+            mode = playlist.repeat_mode
+            enabled = (mode != 'disabled')
+            logger.debug("LoopStatus get: new, %r, %r" % (enabled, mode))
+
+        if enabled:
+            if mode == 'playlist':
+                # <= 0.3.2
+                return 'Playlist'
+            elif mode == 'all':
+                # >= 0.3.3
                 return 'Playlist'
             else:
                 return 'Track'
@@ -376,17 +391,29 @@ class Mpris2Adapter(dbus.service.Object):
     @LoopStatus.setter
     def LoopStatus(self, value):
         playlist = QUEUE.current_playlist
-        if value == 'Playlist':
-            playlist.set_repeat(True, mode='playlist')
-            settings.set_option('playback/repeat', True)
-            settings.set_option('playback/repeat_mode', 'playlist')
-        elif value == 'Track':
-            playlist.set_repeat(True, mode='track')
-            settings.set_option('playback/repeat', True)
-            settings.set_option('playback/repeat_mode', 'track')
+        if hasattr(playlist, "set_repeat"):
+            # <= 0.3.2
+            if value == 'Playlist':
+                enabled, mode = True, 'playlist'
+            elif value == 'Track':
+                enabled, mode = True, 'track'
+            else:
+                enabled, mode = False, 'none'
+            logger.debug("LoopStatus set: old, %r, %r" % (enabled, mode))
+            playlist.set_repeat(enabled, mode)
+            settings.set_option('playback/repeat', enabled)
+            if enabled:
+                settings.set_option('playback/repeat_mode', mode)
         else:
-            playlist.set_repeat(False)
-            settings.set_option('playback/repeat', False)
+            # >= 0.3.3
+            if value == 'Playlist':
+                mode = 'all'
+            elif value == 'Track':
+                mode = 'track'
+            else:
+                mode = 'disabled'
+            logger.debug("LoopStatus set: new, %r" % mode)
+            playlist.repeat_mode = mode
 
     @property
     def MaximumRate(self):

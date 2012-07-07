@@ -135,6 +135,7 @@ class Mpris2Manager(object):
         event.add_callback(self.on_playback_pause, 'playback_toggle_pause')
         event.add_callback(self.on_tags_update, 'track_tags_changed')
         event.add_callback(self.on_option_change, 'option_set')
+        event.add_callback(self.on_repeat_change, 'playlist_repeat_mode_changed')
         # TODO: need a "seeked" callback
 
     def release(self):
@@ -151,6 +152,7 @@ class Mpris2Manager(object):
         event.remove_callback(self.on_playback_pause, 'playback_toggle_pause')
         event.remove_callback(self.on_tags_update, 'track_tags_changed')
         event.remove_callback(self.on_option_change, 'option_set')
+        event.remove_callback(self.on_repeat_change, 'playlist_repeat_mode_changed')
 
     def on_playback_start(self, evt, exaile, data):
         self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
@@ -172,8 +174,13 @@ class Mpris2Manager(object):
 
     def on_option_change(self, evt, settings_manager, data):
         if data == 'playback/repeat':
+            # <= 0.3.2
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'LoopStatus')
         elif data == 'playback/shuffle':
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Shuffle')
         elif data == 'player/volume':
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Volume')
+
+    def on_repeat_change(self, evt, playlist, data):
+        # >= 0.3.3
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'LoopStatus')
