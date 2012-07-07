@@ -180,7 +180,8 @@ class Mpris2Manager(object):
     def on_option_change(self, evt, settings_manager, data):
         if data == 'playback/repeat':
             # <= 0.3.2
-            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'LoopStatus')
+            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                    'LoopStatus', 'CanGoNext', 'CanGoPrevious')
         elif data == 'playback/shuffle':
             # <= 0.3.2
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Shuffle')
@@ -193,4 +194,5 @@ class Mpris2Manager(object):
 
     def on_repeat_change(self, evt, playlist, data):
         # >= 0.3.3
-        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'LoopStatus')
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                'LoopStatus', 'CanGoNext', 'CanGoPrevious')
