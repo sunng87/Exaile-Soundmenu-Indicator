@@ -454,11 +454,36 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def Shuffle(self):
-        return settings.get_option('playback/shuffle', False)
+        playlist = QUEUE.current_playlist
+        if hasattr(playlist, 'shuffle_mode'):
+            # >= 0.3.3
+            mode = (playlist.shuffle_mode != 'disabled')
+            logger.debug("Shuffle get: new, %r" % mode)
+        else:
+            # <= 0.3.2
+            mode = settings.get_option('playback/shuffle', False)
+            logger.debug("Shuffle get: old, %r" % mode)
+        return mode
 
     @Shuffle.setter
     def Shuffle(self, value):
-        settings.set_option('playback/shuffle', bool(value))
+        playlist = QUEUE.current_playlist
+        if hasattr(playlist, 'shuffle_mode'):
+            # >= 0.3.3
+            logger.debug("Shuffle set: new, %r" % value)
+            if value:
+                # TODO: This should toggle on/off like it did in 0.3.2, without
+                #       resetting the mode to 'track' if it was 'album' previously.
+                if self.Shuffle:
+                    # Ensure the current mode is kept for 'on' -> 'on' changes.
+                    return
+                playlist.shuffle_mode = 'track'
+            else:
+                playlist.shuffle_mode = 'disabled'
+        else:
+            # <= 0.3.2
+            logger.debug("Shuffle set: old, %r" % value)
+            settings.set_option('playback/shuffle', bool(value))
 
     @property
     def Volume(self):
