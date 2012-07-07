@@ -1,3 +1,5 @@
+# vim: ts=4:sw=4:et:
+#
 # Copyright (C) 2010 Sun Ning <classicning@gmail.com>
 #
 # This program is free software; you can redistribute it and/or modify
