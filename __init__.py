@@ -168,8 +168,11 @@ class Mpris2Manager(object):
         event.remove_callback(self.on_repeat_change, 'playlist_repeat_mode_changed')
 
     def on_playback_start(self, evt, exaile, data):
+        # When looping a playlist, this is called a bit too early, causing the
+        # PlaybackStatus property to contain "Paused"... Let's assume Exaile will
+        # always be playing after this event.
         self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
-                'PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious',
+                ('PlaybackStatus', 'Playing'), 'Metadata', 'CanGoNext', 'CanGoPrevious',
                 'CanPause', 'CanPlay')
 
     def on_playback_end(self, evt, exaile, data):

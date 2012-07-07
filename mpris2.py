@@ -226,7 +226,13 @@ class Mpris2Adapter(dbus.service.Object):
         logger.info("populate: %s" % repr(prop_names))
         props = {}
         for p in prop_names:
-            props[p] = getattr(self, p)
+            if type(p) is tuple:
+                # NOTE: This is a hack to fix the early-populate problem described
+                #       in the comments of on_playback_start()
+                p, v = p
+                props[p] = v
+            else:
+                props[p] = getattr(self, p)
         self.PropertiesChanged(interface, props, [])
 
     ## main methods
