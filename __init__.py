@@ -111,11 +111,12 @@ def init_indicate():
         pass
 
 DBUS_OBJECT_NAME = 'org.mpris.MediaPlayer2.exaile'
+
 class Mpris2Manager(object):
     def __init__(self, exaile):
         self.exaile = exaile
         self.bus = None
-        
+
     def acquire(self):
         if self.bus:
             self.bus.get_bus().request_name(DBUS_OBJECT_NAME)
@@ -129,8 +130,11 @@ class Mpris2Manager(object):
         event.add_callback(self.on_playback_start, 'playback_track_start')
         event.add_callback(self.on_playback_start, 'playback_player_start')
         event.add_callback(self.on_playback_end, 'playback_track_end')
-        event.add_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
+        event.add_callback(self.on_playback_pause, 'playback_player_pause')
+        event.add_callback(self.on_playback_pause, 'playback_toggle_pause')
         event.add_callback(self.on_tags_update, 'track_tags_changed')
+        event.add_callback(self.on_option_change, 'option_set')
+        # TODO: need a "seeked" callback
 
     def release(self):
         if self.adapter is not None:
@@ -142,23 +146,33 @@ class Mpris2Manager(object):
         event.remove_callback(self.on_playback_start, 'playback_track_start')
         event.remove_callback(self.on_playback_start, 'playback_player_start')
         event.remove_callback(self.on_playback_end, 'playback_track_end')
-        event.remove_callback(self.on_playback_toggle_pause, 'playback_toggle_pause')
+        event.remove_callback(self.on_playback_pause, 'playback_player_pause')
+        event.remove_callback(self.on_playback_pause, 'playback_toggle_pause')
         event.remove_callback(self.on_tags_update, 'track_tags_changed')
-        
+        event.remove_callback(self.on_option_change, 'option_set')
+
     def on_playback_start(self, evt, exaile, data):
-        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 
-                *('PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious'))
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                'PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious',
+                'CanPause', 'CanPlay')
 
     def on_playback_end(self, evt, exaile, data):
-        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 
-                'PlaybackStatus')
-
-    def on_playback_toggle_pause(self, evt, exaile, data):
         self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
-                'PlaybackStatus')
+                'PlaybackStatus', 'Metadata', 'CanGoNext', 'CanGoPrevious',
+                'CanPause', 'CanPlay')
+
+    def on_playback_pause(self, evt, exaile, data):
+        self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
+                'PlaybackStatus', 'CanPause', 'CanPlay')
 
     def on_tags_update(self, evt, track, data):
         if track == self.exaile.player.current:
-            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER,
-                    'Metadata')
+            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Metadata')
 
+    def on_option_change(self, evt, settings_manager, data):
+        if data == 'playback/repeat':
+            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'LoopStatus')
+        elif data == 'playback/shuffle':
+            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Shuffle')
+        elif data == 'player/volume':
+            self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Volume')
