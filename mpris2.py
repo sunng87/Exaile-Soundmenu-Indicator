@@ -32,6 +32,7 @@ import time
 import os
 
 from xl import settings, event
+from xl.player import PLAYER, QUEUE
 from xl.covers import MANAGER as cover_manager
 
 logger = logging.getLogger(__name__)
@@ -279,7 +280,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Next(self):
-        self.exaile.queue.next()
+        QUEUE.next()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, in_signature='s')
     def OpenUri(self, uri):
@@ -287,41 +288,41 @@ class Mpris2Adapter(dbus.service.Object):
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Pause(self):
-        self.exaile.player.pause()
+        PLAYER.pause()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Play(self):
-        self.exaile.queue.play()
+        QUEUE.play()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def PlayPause(self):
-        if self.exaile.player.is_stopped():
-            self.exaile.queue.play()
+        if PLAYER.is_stopped():
+            QUEUE.play()
         else:
-            self.exaile.player.toggle_pause()
+            PLAYER.toggle_pause()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Previous(self):
-        self.exaile.queue.prev()
+        QUEUE.prev()
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, in_signature='x')
     def Seek(self, offset):
-        position = self.exaile.player.get_position() / NANOSECOND
+        position = PLAYER.get_position() / NANOSECOND
         position += offset / MICROSECOND
-        self.exaile.player.seek(position)
+        PLAYER.seek(position)
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER, in_signature='ox')
     def SetPosition(self, track_id, position):
-        if track_id == self._get_trackid(self.exaile.player.current):
+        if track_id == self._get_trackid(PLAYER.current):
             position /= MICROSECOND
-            self.exaile.player.seek(position)
+            PLAYER.seek(position)
         else:
             # treat request as stale
             pass
 
     @dbus.service.method(ORG_MPRIS_MEDIAPLAYER2_PLAYER)
     def Stop(self):
-        self.exaile.player.stop()
+        PLAYER.stop()
 
     ## Player properties
 
@@ -331,8 +332,8 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def CanGoNext(self):
-        track = self.exaile.player.current
-        playlist = self.exaile.queue.current_playlist
+        track = PLAYER.current
+        playlist = QUEUE.current_playlist
         try:
             return not ((len(playlist)-1) == playlist.index(track))
         except ValueError:
@@ -340,8 +341,8 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def CanGoPrevious(self):
-        track = self.exaile.player.current
-        playlist = self.exaile.queue.current_playlist
+        track = PLAYER.current
+        playlist = QUEUE.current_playlist
         try:
             return playlist.index(track) > 0
         except ValueError:
@@ -350,12 +351,12 @@ class Mpris2Adapter(dbus.service.Object):
     @property
     def CanPause(self):
         # MPRIS -- return true even if currently paused
-        return (self.exaile.player.current is not None)
+        return (PLAYER.current is not None)
 
     @property
     def CanPlay(self):
         # MPRIS -- return true even if currently playing
-        return len(self.exaile.queue.current_playlist) > 0
+        return len(QUEUE.current_playlist) > 0
 
     @property
     def CanSeek(self):
@@ -363,7 +364,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def LoopStatus(self):
-        playlist = self.exaile.queue.current_playlist
+        playlist = QUEUE.current_playlist
         if playlist.repeat_enabled:
             if playlist.repeat_mode == 'playlist':
                 return 'Playlist'
@@ -374,7 +375,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @LoopStatus.setter
     def LoopStatus(self, value):
-        playlist = self.exaile.queue.current_playlist
+        playlist = QUEUE.current_playlist
         if value == 'Playlist':
             playlist.set_repeat(True, mode='playlist')
             settings.set_option('playback/repeat', True)
@@ -397,16 +398,16 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def PlaybackStatus(self):
-        if self.exaile.player.is_playing():
+        if PLAYER.is_playing():
             return 'Playing'
-        elif self.exaile.player.is_paused():
+        elif PLAYER.is_paused():
             return 'Paused'
         else:
             return 'Stopped'
 
     @property
     def Position(self):
-        pos = self.exaile.player.get_position() / NANOSECOND * MICROSECOND
+        pos = PLAYER.get_position() / NANOSECOND * MICROSECOND
         return dbus.Int64(pos)
 
     @property
@@ -421,7 +422,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     @property
     def Metadata(self):
-        current_track = self.exaile.player.current
+        current_track = PLAYER.current
         return self._get_metadata(current_track)
 
     @property
@@ -435,11 +436,11 @@ class Mpris2Adapter(dbus.service.Object):
     @property
     def Volume(self):
         # Range: 0.0 ~ 1.0
-        return self.exaile.player.get_volume() / 100.0
+        return PLAYER.get_volume() / 100.0
 
     @Volume.setter
     def Volume(self, value):
-        self.exaile.player.set_volume(value * 100.0)
+        PLAYER.set_volume(value * 100.0)
 
     ## TrackList methods
 
@@ -474,7 +475,7 @@ class Mpris2Adapter(dbus.service.Object):
 
     def _get_trackid(self, track):
         try:
-            idx = self.exaile.queue.current_playlist.index(track)
+            idx = QUEUE.current_playlist.index(track)
             return "/org/exaile/Exaile/CurrentPlaylist/Track%d" % (idx+1)
         except ValueError:
             # TODO: find a better response than this

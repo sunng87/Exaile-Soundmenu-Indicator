@@ -41,6 +41,7 @@ from mpris2 import ORG_MPRIS_MEDIAPLAYER2_PLAYER
 from mpris2 import ORG_MPRIS_MEDIAPLAYER2_TRACKLIST
 
 from xl import event, settings
+from xl.player import PLAYER
 
 MPRIS2 = None
 _WINDOW_STATE_HANDLER = None
@@ -166,7 +167,7 @@ class Mpris2Manager(object):
                 'PlaybackStatus', 'CanPause', 'CanPlay')
 
     def on_tags_update(self, evt, track, data):
-        if track == self.exaile.player.current:
+        if track == PLAYER.current:
             self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'Metadata')
 
     def on_option_change(self, evt, settings_manager, data):
