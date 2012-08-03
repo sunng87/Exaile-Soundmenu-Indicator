@@ -508,6 +508,12 @@ class Mpris2Adapter(dbus.service.Object):
     def Volume(self, value):
         PLAYER.set_volume(value * 100.0)
 
+    ## Player signals
+
+    @dbus.service.signal(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='x')
+    def Seeked(self, position):
+        pass
+
     ## TrackList methods
 
     # TODO: implement according to:

@@ -41,6 +41,7 @@ from mpris2 import Mpris2Adapter
 from mpris2 import ORG_MPRIS_MEDIAPLAYER2
 from mpris2 import ORG_MPRIS_MEDIAPLAYER2_PLAYER
 from mpris2 import ORG_MPRIS_MEDIAPLAYER2_TRACKLIST
+from mpris2 import MICROSECOND
 
 from xl import event, settings
 from xl.player import PLAYER
@@ -146,7 +147,7 @@ class Mpris2Manager(object):
         event.add_callback(self.on_playlist_change, 'playlist_current_position_changed')
         event.add_callback(self.on_shuffle_change, 'playlist_shuffle_mode_changed')
         event.add_callback(self.on_repeat_change, 'playlist_repeat_mode_changed')
-        # TODO: need a "seeked" callback
+        event.add_callback(self.on_seek, 'playback_seeked')
 
     def release(self):
         if self.adapter is not None:
@@ -168,6 +169,7 @@ class Mpris2Manager(object):
         event.remove_callback(self.on_playlist_change, 'playlist_current_position_changed')
         event.remove_callback(self.on_shuffle_change, 'playlist_shuffle_mode_changed')
         event.remove_callback(self.on_repeat_change, 'playlist_repeat_mode_changed')
+        event.remove_callback(self.on_seek, 'playback_seeked')
 
     def on_playback_start(self, evt, exaile, data):
         # When looping a playlist, this is called a bit too early, causing the
@@ -212,3 +214,6 @@ class Mpris2Manager(object):
 
     def on_playlist_change(self, evt, playlist, unknown):
         self.adapter.populate(ORG_MPRIS_MEDIAPLAYER2_PLAYER, 'CanGoNext', 'CanGoPrevious')
+
+    def on_seek(self, evt, player, pos):
+        self.adapter.Seeked(pos * MICROSECOND)
