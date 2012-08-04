@@ -386,7 +386,7 @@ class Mpris2Adapter(dbus.service.Object):
             logger.debug("LoopStatus get: old, %r, %r" % (enabled, mode))
         else:
             # >= 0.3.3
-            mode = playlist.repeat_mode
+            mode = playlist.get_repeat_mode()
             enabled = (mode != 'disabled')
             logger.debug("LoopStatus get: new, %r, %r" % (enabled, mode))
 
@@ -427,7 +427,7 @@ class Mpris2Adapter(dbus.service.Object):
             else:
                 mode = 'disabled'
             logger.debug("LoopStatus set: new, %r" % mode)
-            playlist.repeat_mode = mode
+            playlist.set_repeat_mode(mode)
 
     @property
     def MaximumRate(self):
@@ -469,9 +469,9 @@ class Mpris2Adapter(dbus.service.Object):
     @property
     def Shuffle(self):
         playlist = QUEUE.current_playlist
-        if hasattr(playlist, 'shuffle_mode'):
+        if hasattr(playlist, 'get_shuffle_mode'):
             # >= 0.3.3
-            mode = (playlist.shuffle_mode != 'disabled')
+            mode = (playlist.get_shuffle_mode() != 'disabled')
             logger.debug("Shuffle get: new, %r" % mode)
         else:
             # <= 0.3.2
@@ -482,7 +482,7 @@ class Mpris2Adapter(dbus.service.Object):
     @Shuffle.setter
     def Shuffle(self, value):
         playlist = QUEUE.current_playlist
-        if hasattr(playlist, 'shuffle_mode'):
+        if hasattr(playlist, 'set_shuffle_mode'):
             # >= 0.3.3
             logger.debug("Shuffle set: new, %r" % value)
             if value:
@@ -491,9 +491,9 @@ class Mpris2Adapter(dbus.service.Object):
                 if self.Shuffle:
                     # Ensure the current mode is kept for 'on' -> 'on' changes.
                     return
-                playlist.shuffle_mode = 'track'
+                playlist.set_shuffle_mode('track')
             else:
-                playlist.shuffle_mode = 'disabled'
+                playlist.set_shuffle_mode('disabled')
         else:
             # <= 0.3.2
             logger.debug("Shuffle set: old, %r" % value)
@@ -507,6 +507,12 @@ class Mpris2Adapter(dbus.service.Object):
     @Volume.setter
     def Volume(self, value):
         PLAYER.set_volume(value * 100.0)
+
+    ## Player signals
+
+    @dbus.service.signal(ORG_MPRIS_MEDIAPLAYER2_PLAYER, signature='x')
+    def Seeked(self, position):
+        pass
 
     ## TrackList methods
 
