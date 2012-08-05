@@ -2,3 +2,4 @@ Version='0.0.6'
 Authors=['Sun Ning <classicning@gmail.com>']
 Name=_('Sound Menu Indicator')
 Description='MPRISv2 and Ubuntu Sound Menu support for Exaile'
+Category=_('Utility')
